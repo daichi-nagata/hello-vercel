@@ -14,20 +14,20 @@
       color: #ff5555;
     }
     .button-container {
-      margin-bottom: 20px;
+      margin: 20px 0;
     }
     .button-container button {
-      margin-right: 10px;
+      margin: 5px;
       padding: 10px 15px;
       font-size: 14px;
-      background: #222;
+      background: #444;   /* ← 見えるように修正 */
       color: #fff;
-      border: 1px solid #444;
+      border: none;       /* 枠線削除 */
       border-radius: 5px;
       cursor: pointer;
     }
     .button-container button:hover {
-      background: #444;
+      background: #666;   /* ホバー時に明るく */
     }
     .video-list {
       margin-top: 20px;
@@ -40,6 +40,7 @@
     .video-item img {
       display: block;
       margin-bottom: 5px;
+      max-width: 320px;
     }
     .video-item a {
       color: #66aaff;
@@ -53,6 +54,7 @@
 <body>
   <h1>怪談イキタイ</h1>
 
+  <!-- ✅ 各ページに遷移するボタン -->
   <div class="button-container">
     <button onclick="location.href='post.html'">怪談を投稿する</button>
     <button onclick="location.href='list.html'">怪談を読む</button>
