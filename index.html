@@ -20,14 +20,14 @@
       margin: 5px;
       padding: 10px 15px;
       font-size: 14px;
-      background: #444;   /* ← 見えるように修正 */
+      background: #444;
       color: #fff;
-      border: none;       /* 枠線削除 */
+      border: none;
       border-radius: 5px;
       cursor: pointer;
     }
     .button-container button:hover {
-      background: #666;   /* ホバー時に明るく */
+      background: #666;
     }
     .video-list {
       margin-top: 20px;
@@ -45,16 +45,23 @@
     .video-item a {
       color: #66aaff;
       text-decoration: none;
+      font-weight: bold;
     }
     .video-item a:hover {
       text-decoration: underline;
+    }
+    .video-description {
+      white-space: pre-wrap; /* 改行を保持 */
+      margin-top: 5px;
+      font-size: 13px;
+      color: #ccc;
     }
   </style>
 </head>
 <body>
   <h1>怪談イキタイ</h1>
 
-  <!-- ✅ 各ページに遷移するボタン -->
+  <!-- 各ページに遷移するボタン -->
   <div class="button-container">
     <button onclick="location.href='post.html'">怪談を投稿する</button>
     <button onclick="location.href='list.html'">怪談を読む</button>
@@ -67,18 +74,20 @@
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-    const SUPABASE_URL = 'https://ihctbvvcstrtwbvzqzzk.supabase.co';  // ← あなたのSupabase URLに変更
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloY3RidnZjc3RydHdidnpxenprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzOTc1NTIsImV4cCI6MjA3MDk3MzU1Mn0.uZQgFKG6P1M18pfCFrCV59ASXlZb7ymC5tELkJke3kk';            // ← あなたのanonキーに変更
+    const SUPABASE_URL = 'https://ihctbvvcstrtwbvzqzzk.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloY3RidnZjc3RydHdidnpxenprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzOTc1NTIsImV4cCI6MjA3MDk3MzU1Mn0.uZQgFKG6P1M18pfCFrCV59ASXlZb7ymC5tELkJke3kk';
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
     async function loadVideos() {
+      const container = document.getElementById('video-list');
+      container.innerHTML = '読み込み中...';
+
       const { data, error } = await supabase
         .from('youtube_videos')
         .select('*')
         .order('id', { ascending: false })
         .limit(50);
 
-      const container = document.getElementById('video-list');
       container.innerHTML = '';
 
       if (error) {
@@ -91,16 +100,17 @@
         return;
       }
 
-      for (const video of data) {
+      data.forEach(video => {
         const div = document.createElement('div');
         div.className = 'video-item';
+
         div.innerHTML = `
           <img src="${video.thumbnail_url}" alt="thumbnail">
           <a href="${video.url}" target="_blank">${video.title}</a>
-          <p>${video.description || ''}</p>
+          <div class="video-description">${video.description || ''}</div>
         `;
         container.appendChild(div);
-      }
+      });
     }
 
     loadVideos();
