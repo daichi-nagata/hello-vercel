@@ -2,37 +2,120 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>怪談キキタイ | トップページ</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>怪談検索 & 動画一覧</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
-      font-family: sans-serif;
-      margin: 20px;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background-color: #111;
+      color: #fff;
+    }
+    h1 {
+      color: #ff5555;
+    }
+    form {
+      margin-bottom: 30px;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+      margin-right: 10px;
+      border-radius: 5px;
+      border: none;
+    }
+    input {
+      width: 250px;
+    }
+    button {
+      background-color: #ff5555;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #ff2222;
+    }
+    .video-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+    }
+    .video-card {
+      background: #222;
+      padding: 10px;
+      border-radius: 8px;
       text-align: center;
     }
-    h1 { margin-bottom: 40px; }
-    a.button {
-      display: inline-block;
-      margin: 10px;
-      padding: 15px 25px;
-      font-size: 1rem;
-      text-decoration: none;
-      color: #fff;
-      background-color: #007bff;
-      border-radius: 5px;
-      transition: background-color 0.2s;
+    .video-card img {
+      width: 100%;
+      border-radius: 8px;
     }
-    a.button:hover {
-      background-color: #0056b3;
+    .video-card h3 {
+      font-size: 16px;
+      margin: 10px 0;
+    }
+    .video-card a {
+      color: #00aaff;
+      text-decoration: none;
     }
   </style>
 </head>
 <body>
-  <h1>怪談キキタイ</h1>
+  <h1>怪談検索 & 人気動画一覧</h1>
 
-  <a class="button" href="post.html">怪談を投稿する</a><br>
-  <a class="button" href="list.html">投稿済み怪談を見る</a><br>
-  <a class="button" href="donate.html">怪談に投げ銭する</a><br>
-  <a class="button" href="recommend.html">未視聴怪談動画をチェック</a>
+  <!-- 🔍 既存の検索フォーム -->
+  <form id="search-form">
+    <input type="text" id="query" placeholder="怪談を検索">
+    <button type="submit">検索</button>
+  </form>
+
+  <!-- 🎬 Supabaseから取得した動画一覧 -->
+  <h2>人気怪談動画一覧</h2>
+  <div id="videos" class="video-list"></div>
+
+  <script>
+    const SUPABASE_URL = "https://your-project.supabase.co"; // あなたのSupabase URL
+    const SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY"; // anon key を利用
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // 🎬 Supabase から動画一覧を取得
+    async function loadVideos() {
+      const { data, error } = await supabase
+        .from("youtube_videos")
+        .select("*")
+        .order("id", { ascending: false });
+
+      if (error) {
+        console.error("データ取得エラー:", error);
+        return;
+      }
+
+      const container = document.getElementById("videos");
+      container.innerHTML = "";
+
+      data.forEach(video => {
+        const card = document.createElement("div");
+        card.className = "video-card";
+        card.innerHTML = `
+          <a href="${video.url}" target="_blank">
+            <img src="${video.thumbnail_url}" alt="${video.title}">
+          </a>
+          <h3>${video.title}</h3>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // 🔍 検索フォームの動作（とりあえずコンソール出力）
+    document.getElementById("search-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const query = document.getElementById("query").value;
+      console.log("検索ワード:", query);
+      alert(`検索機能はまだ開発中です: ${query}`);
+    });
+
+    // 初期表示
+    loadVideos();
+  </script>
 </body>
 </html>
