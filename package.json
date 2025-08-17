@@ -18,6 +18,7 @@
   "homepage": "https://github.com/daichi-nagata/hello-vercel#readme",
   "description": "",
   "dependencies": {
-    "@supabase/supabase-js": "^2.55.0"
+    "@supabase/supabase-js": "^2.55.0",
+    "stripe": "^18.4.0"
   }
 }
