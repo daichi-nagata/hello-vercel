@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>怪談管理画面</title>
+  <style>
+    body { font-family: Arial; margin: 20px; background-color: #111; color: #eee; }
+    h1 { color: #ff5555; }
+    label { display: block; margin-top: 10px; }
+    input, select { padding: 5px; margin-top: 5px; width: 200px; }
+    button { margin-top: 15px; padding: 10px 15px; background: #444; color: #fff; border: none; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #666; }
+    #message { margin-top: 15px; }
+  </style>
+</head>
+<body>
+  <h1>怪談管理画面</h1>
+
+  <label>対象動画:
+    <select id="video-select"></select>
+  </label>
+
+  <label>怪談の開始時間 (mm:ss):
+    <input type="text" id="start-time" placeholder="例: 02:30">
+  </label>
+
+  <label>怪談の終了時間 (mm:ss):
+    <input type="text" id="end-time" placeholder="例: 05:15">
+  </label>
+
+  <label>話し手:
+    <select id="storyteller-select"></select>
+    または手入力:
+    <input type="text" id="storyteller-input" placeholder="新しい話し手">
+  </label>
+
+  <button id="submit-btn">怪談区間を登録</button>
+
+  <div id="message"></div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+    const SUPABASE_URL = 'https://ihctbvvcstrtwbvzqzzk.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloY3RidnZjc3RydHdidnpxenprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzOTc1NTIsImV4cCI6MjA3MDk3MzU1Mn0.uZQgFKG6P1M18pfCFrCV59ASXlZb7ymC5tELkJke3kk';
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const videoSelect = document.getElementById('video-select');
+    const storytellerSelect = document.getElementById('storyteller-select');
+    const storytellerInput = document.getElementById('storyteller-input');
+    const messageDiv = document.getElementById('message');
+    const submitBtn = document.getElementById('submit-btn');
+
+    // 動画リスト取得
+    async function loadVideos() {
+      const { data, error } = await supabase
+        .from('youtube_videos')
+        .select('*')
+        .order('id', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        messageDiv.innerText = '動画取得エラー: ' + error.message;
+        return;
+      }
+
+      data.forEach(video => {
+        const option = document.createElement('option');
+        option.value = video.id;
+        option.text = video.title;
+        videoSelect.appendChild(option);
+      });
+    }
+
+    // 話し手リスト取得
+    async function loadStorytellers() {
+      const { data, error } = await supabase
+        .from('story_tellers')
+        .select('*')
+        .order('id', { ascending: true });
+
+      if (error) {
+        messageDiv.innerText = '話し手取得エラー: ' + error.message;
+        return;
+      }
+
+      data.forEach(st => {
+        const option = document.createElement('option');
+        option.value = st.id;
+        option.text = st.name;
+        storytellerSelect.appendChild(option);
+      });
+    }
+
+    // 登録処理
+    submitBtn.addEventListener('click', async () => {
+      const videoId = videoSelect.value;
+      let storytellerId = storytellerSelect.value;
+      const newStoryteller = storytellerInput.value.trim();
+      const startTime = document.getElementById('start-time').value.trim();
+      const endTime = document.getElementById('end-time').value.trim();
+
+      if (!videoId || (!storytellerId && !newStoryteller) || !startTime || !endTime) {
+        messageDiv.innerText = 'すべての項目を入力してください';
+        return;
+      }
+
+      // 新しい話し手がある場合は追加
+      if (newStoryteller) {
+        const { data: newSt, error: insertError } = await supabase
+          .from('story_tellers')
+          .insert([{ name: newStoryteller }])
+          .select()
+          .single();
+
+        if (insertError) {
+          messageDiv.innerText = '話し手登録エラー: ' + insertError.message;
+          return;
+        }
+        storytellerId = newSt.id;
+      }
+
+      // kaidan_stories に登録
+      const { error } = await supabase
+        .from('kaidan_stories')
+        .insert([{
+          video_id: videoId,
+          storyteller_id: storytellerId,
+          start_time: startTime,
+          end_time: endTime
+        }]);
+
+      if (error) {
+        messageDiv.innerText = '怪談区間登録エラー: ' + error.message;
+      } else {
+        messageDiv.innerText = '✅ 登録成功';
+        storytellerInput.value = '';
+        document.getElementById('start-time').value = '';
+        document.getElementById('end-time').value = '';
+      }
+    });
+
+    loadVideos();
+    loadStorytellers();
+  </script>
+</body>
+</html>
