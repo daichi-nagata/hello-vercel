@@ -2,119 +2,105 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>怪談検索 & 動画一覧</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <title>怪談イキタイ - トップページ</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
+      margin: 20px;
       background-color: #111;
-      color: #fff;
+      color: #eee;
     }
     h1 {
       color: #ff5555;
     }
-    form {
-      margin-bottom: 30px;
+    .button-container {
+      margin-bottom: 20px;
     }
-    input, button {
-      padding: 10px;
-      font-size: 16px;
+    .button-container button {
       margin-right: 10px;
-      border-radius: 5px;
-      border: none;
-    }
-    input {
-      width: 250px;
-    }
-    button {
-      background-color: #ff5555;
+      padding: 10px 15px;
+      font-size: 14px;
+      background: #222;
       color: #fff;
+      border: 1px solid #444;
+      border-radius: 5px;
       cursor: pointer;
     }
-    button:hover {
-      background-color: #ff2222;
+    .button-container button:hover {
+      background: #444;
     }
     .video-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 20px;
+      margin-top: 20px;
     }
-    .video-card {
-      background: #222;
+    .video-item {
+      margin-bottom: 15px;
       padding: 10px;
-      border-radius: 8px;
-      text-align: center;
+      border-bottom: 1px solid #333;
     }
-    .video-card img {
-      width: 100%;
-      border-radius: 8px;
+    .video-item img {
+      display: block;
+      margin-bottom: 5px;
     }
-    .video-card h3 {
-      font-size: 16px;
-      margin: 10px 0;
-    }
-    .video-card a {
-      color: #00aaff;
+    .video-item a {
+      color: #66aaff;
       text-decoration: none;
+    }
+    .video-item a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
-  <h1>怪談検索 & 人気動画一覧</h1>
+  <h1>怪談イキタイ</h1>
 
-  <!-- 🔍 既存の検索フォーム -->
-  <form id="search-form">
-    <input type="text" id="query" placeholder="怪談を検索">
-    <button type="submit">検索</button>
-  </form>
+  <div class="button-container">
+    <button onclick="location.href='post.html'">怪談を投稿する</button>
+    <button onclick="location.href='list.html'">怪談を読む</button>
+    <button onclick="location.href='donate.html'">投げ銭をする</button>
+  </div>
 
-  <!-- 🎬 Supabaseから取得した動画一覧 -->
-  <h2>人気怪談動画一覧</h2>
-  <div id="videos" class="video-list"></div>
+  <h2>人気の怪談動画</h2>
+  <div id="video-list" class="video-list">読み込み中...</div>
 
-  <script>
-    const SUPABASE_URL = "https://ihctbvvcstrtwbvzqzzk.supabase.co"; // あなたのSupabase URL
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloY3RidnZjc3RydHdidnpxenprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzOTc1NTIsImV4cCI6MjA3MDk3MzU1Mn0.uZQgFKG6P1M18pfCFrCV59ASXlZb7ymC5tELkJke3kk"; // anon key を利用
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-    // 🎬 Supabase から動画一覧を取得
+    const SUPABASE_URL = 'https://ihctbvvcstrtwbvzqzzk.supabase.co';  // ← あなたのSupabase URLに変更
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloY3RidnZjc3RydHdidnpxenprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzOTc1NTIsImV4cCI6MjA3MDk3MzU1Mn0.uZQgFKG6P1M18pfCFrCV59ASXlZb7ymC5tELkJke3kk';            // ← あなたのanonキーに変更
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
     async function loadVideos() {
       const { data, error } = await supabase
-        .from("youtube_videos")
-        .select("*")
-        .order("id", { ascending: false });
+        .from('youtube_videos')
+        .select('*')
+        .order('id', { ascending: false })
+        .limit(10);
+
+      const container = document.getElementById('video-list');
+      container.innerHTML = '';
 
       if (error) {
-        console.error("データ取得エラー:", error);
+        container.innerHTML = 'エラーが発生しました: ' + error.message;
         return;
       }
 
-      const container = document.getElementById("videos");
-      container.innerHTML = "";
+      if (!data || data.length === 0) {
+        container.innerHTML = 'まだ動画が登録されていません。';
+        return;
+      }
 
-      data.forEach(video => {
-        const card = document.createElement("div");
-        card.className = "video-card";
-        card.innerHTML = `
-          <a href="${video.url}" target="_blank">
-            <img src="${video.thumbnail_url}" alt="${video.title}">
-          </a>
-          <h3>${video.title}</h3>
+      for (const video of data) {
+        const div = document.createElement('div');
+        div.className = 'video-item';
+        div.innerHTML = `
+          <img src="${video.thumbnail_url}" alt="thumbnail">
+          <a href="${video.url}" target="_blank">${video.title}</a>
+          <p>${video.description || ''}</p>
         `;
-        container.appendChild(card);
-      });
+        container.appendChild(div);
+      }
     }
 
-    // 🔍 検索フォームの動作（とりあえずコンソール出力）
-    document.getElementById("search-form").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const query = document.getElementById("query").value;
-      console.log("検索ワード:", query);
-      alert(`検索機能はまだ開発中です: ${query}`);
-    });
-
-    // 初期表示
     loadVideos();
   </script>
 </body>
