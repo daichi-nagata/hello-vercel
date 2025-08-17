@@ -76,7 +76,7 @@
         .from('youtube_videos')
         .select('*')
         .order('id', { ascending: false })
-        .limit(10);
+        .limit(50);
 
       const container = document.getElementById('video-list');
       container.innerHTML = '';

@@ -8,7 +8,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 async function main() {
   const res = await fetch(
-    `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&q=怪談&type=video&part=snippet&order=viewCount&maxResults=3`
+    `https://www.googleapis.com/youtube/v3/search?key=${API_KEY}&q=怪談&type=video&part=snippet&order=viewCount&maxResults=50`
   );
 
   if (!res.ok) {
