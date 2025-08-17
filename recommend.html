@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>未視聴怪談動画一覧 | 怪談キキタイ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    .video-card { border-bottom: 1px solid #ccc; padding: 10px 0; display: flex; align-items: flex-start; }
+    .thumbnail { width: 120px; height: 90px; margin-right: 10px; }
+    .info { flex: 1; }
+    .title { font-weight: bold; font-size: 1rem; }
+    .story { font-size: 0.9rem; color: #555; }
+    button { margin-top: 5px; padding: 5px 10px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>未視聴怪談動画一覧</h1>
+  <div id="videos-container"></div>
+  <p><a href="index.html">← トップへ戻る</a></p>
+
+  <script>
+    const USER_ID = 'ここにテストユーザーIDをUUID形式で入力';
+
+    async function fetchUnwatchedVideos() {
+      const res = await fetch(`/api/unwatched-videos?user_id=${USER_ID}`);
+      const data = await res.json();
+      const container = document.getElementById('videos-container');
+      container.innerHTML = '';
+
+      data.videos.forEach(video => {
+        const div = document.createElement('div');
+        div.className = 'video-card';
+        div.innerHTML = `
+          <img class="thumbnail" src="${video.thumbnail_url}" alt="サムネイル">
+          <div class="info">
+            <div class="story">怪談師: ${video.story_tellers.name} / タイトル: ${video.story_tellers.title}</div>
+            <div class="title">${video.title}</div>
+            <div>${video.description || ''}</div>
+            <button data-video-id="${video.id}">視聴済みにする</button>
+          </div>
+        `;
+        container.appendChild(div);
+
+        // ボタンにクリックイベントを追加
+        div.querySelector('button').addEventListener('click', async (e) => {
+          const vid = e.target.dataset.videoId;
+          await markWatched(vid);
+          fetchUnwatchedVideos(); // 更新
+        });
+      });
+    }
+
+    async function markWatched(videoId) {
+      const res = await fetch('/api/mark-watched', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: USER_ID, video_id: videoId })
+      });
+      const data = await res.json();
+      if (!data.success) {
+        alert('視聴済み登録に失敗: ' + data.error);
+      }
+    }
+
+    fetchUnwatchedVideos();
+  </script>
+</body>
+</html>
