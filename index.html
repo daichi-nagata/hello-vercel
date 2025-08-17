@@ -36,6 +36,10 @@
       margin-bottom: 15px;
       padding: 10px;
       border-bottom: 1px solid #333;
+      transition: background 0.3s;
+    }
+    .video-item.watched {
+      background-color: #2a2a2a; /* 視聴済み動画の色 */
     }
     .video-item img {
       display: block;
@@ -49,26 +53,13 @@
     .video-item a:hover {
       text-decoration: underline;
     }
-    .admin-form {
-      margin-top: 10px;
-      background: #222;
-      padding: 8px;
-      border-radius: 5px;
-    }
-    .admin-form input {
-      width: 150px;
+    .admin-form label {
+      display: inline-block;
       margin-right: 10px;
+      margin-bottom: 5px;
     }
-    .admin-form button {
-      background: #555;
-      color: #fff;
-      border-radius: 3px;
-      padding: 3px 8px;
-      border: none;
-      cursor: pointer;
-    }
-    .admin-form button:hover {
-      background: #777;
+    .admin-form input[type="text"] {
+      width: 150px;
     }
   </style>
 </head>
@@ -89,7 +80,7 @@
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
     const SUPABASE_URL = 'https://ihctbvvcstrtwbvzqzzk.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloY3RidnZjc3RydHdidnpxenprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzOTc1NTIsImV4cCI6MjA3MDk3MzU1Mn0.uZQgFKG6P1M18pfCFrCV59ASXlZb7ymC5tELkJke3kk';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5ZCI6...'; // 既存 anon key
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -118,54 +109,46 @@
       for (const video of data) {
         const div = document.createElement('div');
         div.className = 'video-item';
-        div.dataset.videoId = video.video_id;
+        if (video.is_watched) div.classList.add('watched');
 
-        let innerHTML = `
+        div.innerHTML = `
           <img src="${video.thumbnail_url}" alt="thumbnail">
           <a href="${video.url}" target="_blank">${video.title}</a>
           <p>${video.description || ''}</p>
         `;
-
-        // 管理者モードならフォームを追加
-        if (isAdmin) {
-          innerHTML += `
-            <div class="admin-form">
-              <label>怪談者:
-                <input type="text" class="teller-input" value="${video.teller_name || ''}">
-              </label>
-              <label>区間 (例: 0:30-3:15):
-                <input type="text" class="section-input" value="${video.section || ''}">
-              </label>
-              <button class="save-btn">保存</button>
-            </div>
-          `;
-        }
-
-        div.innerHTML = innerHTML;
         container.appendChild(div);
-      }
 
-      // 保存ボタンのイベント登録
-      if (isAdmin) {
-        document.querySelectorAll('.save-btn').forEach(btn => {
-          btn.addEventListener('click', async () => {
-            const itemDiv = btn.closest('.video-item');
-            const videoId = itemDiv.dataset.videoId;
-            const teller = itemDiv.querySelector('.teller-input').value;
-            const section = itemDiv.querySelector('.section-input').value;
+        // 管理者用フォーム
+        if (isAdmin) {
+          const adminDiv = document.createElement('div');
+          adminDiv.className = 'admin-form';
+          adminDiv.innerHTML = `
+            <label>怪談者名: <input type="text" id="teller-${video.id}" value="${video.teller_name || ''}"></label>
+            <label>区間: <input type="text" id="section-${video.id}" value="${video.section || ''}"></label>
+            <label>視聴済み: <input type="checkbox" id="watched-${video.id}" ${video.is_watched ? 'checked' : ''}></label>
+            <button id="save-${video.id}">保存</button>
+            <hr>
+          `;
+          container.appendChild(adminDiv);
 
-            const { error } = await supabase
+          document.getElementById(`save-${video.id}`).addEventListener('click', async () => {
+            const teller_name = document.getElementById(`teller-${video.id}`).value;
+            const section = document.getElementById(`section-${video.id}`).value;
+            const is_watched = document.getElementById(`watched-${video.id}`).checked;
+
+            const { error: updateError } = await supabase
               .from('youtube_videos')
-              .update({ teller_name: teller, section: section })
-              .eq('video_id', videoId);
+              .update({ teller_name, section, is_watched })
+              .eq('id', video.id);
 
-            if (error) {
-              alert('更新に失敗しました: ' + error.message);
+            if (updateError) {
+              alert('更新に失敗しました: ' + updateError.message);
             } else {
-              alert('更新しました');
+              alert('更新成功!');
+              div.classList.toggle('watched', is_watched); // 背景色更新
             }
           });
-        });
+        }
       }
     }
 
