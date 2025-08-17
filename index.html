@@ -10,7 +10,7 @@
       background-color: #111;
       color: #eee;
     }
-    h1 {
+    h1, h2 {
       color: #ff5555;
     }
     .button-container {
@@ -30,16 +30,13 @@
       background: #666;
     }
     .video-list {
-      margin-top: 20px;
+      margin-top: 10px;
     }
     .video-item {
       margin-bottom: 15px;
       padding: 10px;
       border-bottom: 1px solid #333;
       transition: background 0.3s;
-    }
-    .video-item.watched {
-      background-color: #2a2a2a; /* 視聴済み動画の色 */
     }
     .video-item img {
       display: block;
@@ -53,6 +50,9 @@
     .video-item a:hover {
       text-decoration: underline;
     }
+    .video-item.watched {
+      background-color: #2a2a2a;
+    }
     .admin-form label {
       display: inline-block;
       margin-right: 10px;
@@ -60,6 +60,9 @@
     }
     .admin-form input[type="text"] {
       width: 150px;
+    }
+    hr {
+      border-color: #444;
     }
   </style>
 </head>
@@ -73,14 +76,17 @@
     <button onclick="location.href='donate.html'">投げ銭をする</button>
   </div>
 
-  <h2>人気の怪談動画</h2>
-  <div id="video-list" class="video-list">読み込み中...</div>
+  <h2>未視聴の怪談動画</h2>
+  <div id="unwatched-list" class="video-list">読み込み中...</div>
+
+  <h2>視聴済みの怪談動画</h2>
+  <div id="watched-list" class="video-list">読み込み中...</div>
 
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
     const SUPABASE_URL = 'https://ihctbvvcstrtwbvzqzzk.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImloY3RidnZjc3RydHdidnpxenprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzOTc1NTIsImV4cCI6MjA3MDk3MzU1Mn0.uZQgFKG6P1M18pfCFrCV59ASXlZb7ymC5tELkJke3kk'; // 既存 anon key
+    const SUPABASE_KEY = 'YOUR_ANON_KEY'; // 置き換えてください
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -93,20 +99,24 @@
         .order('id', { ascending: false })
         .limit(50);
 
-      const container = document.getElementById('video-list');
-      container.innerHTML = '';
+      const unwatchedContainer = document.getElementById('unwatched-list');
+      const watchedContainer = document.getElementById('watched-list');
+      unwatchedContainer.innerHTML = '';
+      watchedContainer.innerHTML = '';
 
       if (error) {
-        container.innerHTML = 'エラーが発生しました: ' + error.message;
+        unwatchedContainer.innerHTML = 'エラーが発生しました: ' + error.message;
+        watchedContainer.innerHTML = '';
         return;
       }
 
       if (!data || data.length === 0) {
-        container.innerHTML = 'まだ動画が登録されていません。';
+        unwatchedContainer.innerHTML = 'まだ動画が登録されていません。';
+        watchedContainer.innerHTML = '';
         return;
       }
 
-      for (const video of data) {
+      data.forEach(video => {
         const div = document.createElement('div');
         div.className = 'video-item';
         if (video.is_watched) div.classList.add('watched');
@@ -116,6 +126,8 @@
           <a href="${video.url}" target="_blank">${video.title}</a>
           <p>${video.description || ''}</p>
         `;
+
+        const container = video.is_watched ? watchedContainer : unwatchedContainer;
         container.appendChild(div);
 
         // 管理者用フォーム
@@ -145,11 +157,12 @@
               alert('更新に失敗しました: ' + updateError.message);
             } else {
               alert('更新成功!');
-              div.classList.toggle('watched', is_watched); // 背景色更新
+              // リストを再ロードして、未視聴/視聴済みセクションを反映
+              loadVideos();
             }
           });
         }
-      }
+      });
     }
 
     loadVideos();
