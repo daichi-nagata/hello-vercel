@@ -2,14 +2,40 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <title>投げ銭 | 怪談キキタイ</title>
+  <title>怪談に投げ銭 | 怪談キキタイ</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    input, button { padding: 10px; margin: 5px 0; width: 100%; box-sizing: border-box; }
+    button { cursor: pointer; }
+  </style>
 </head>
 <body>
-  <h1>投げ銭</h1>
-  <p>この怪談投稿者を応援できます。</p>
+  <h1>怪談に投げ銭</h1>
+  <p>投げ銭したい金額を入力してください（円）</p>
+  <input type="number" id="amount" placeholder="例: 500">
+  <button id="donateBtn">投げ銭する</button>
 
-  <button onclick="alert('ここで決済処理を実装します')">投げ銭する</button>
+  <p><a href="index.html">← トップへ戻る</a></p>
 
-  <p><a href="list.html">← 一覧へ戻る</a></p>
+  <script>
+    document.getElementById('donateBtn').addEventListener('click', async () => {
+      const amount = parseInt(document.getElementById('amount').value);
+      if (!amount || amount <= 0) { alert('金額を正しく入力してください'); return; }
+
+      const res = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount })
+      });
+
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url; // Stripe チェックアウトにリダイレクト
+      } else {
+        alert('エラー: ' + data.error);
+      }
+    });
+  </script>
 </body>
 </html>
