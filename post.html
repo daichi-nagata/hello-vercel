@@ -6,7 +6,7 @@
 </head>
 <body>
   <h1>怪談を投稿する</h1>
-  <form action="#" method="post">
+  <form>
     <label>タイトル:<br>
       <input type="text" name="title" required>
     </label>
@@ -19,5 +19,28 @@
   </form>
 
   <p><a href="index.html">← トップへ戻る</a></p>
+
+  <script>
+    document.querySelector('form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const title = e.target.title.value;
+      const content = e.target.content.value;
+
+      const response = await fetch('/api/post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, content })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert('投稿完了！');
+        e.target.reset();
+      } else {
+        alert('投稿失敗: ' + result.error);
+      }
+    });
+  </script>
 </body>
 </html>
